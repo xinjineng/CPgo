@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>新技能之同人女简易排版估计工具</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #e6e9ef;
+            font-family: "Noto Serif SC", "宋体", serif;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .app {
+            max-width: 1480px;
+            width: 100%;
+            background: white;
+            border-radius: 28px;
+            padding: 24px 28px 28px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.08);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 4px;
+            flex-wrap: wrap;
+        }
+        .header .icon {
+            font-size: 28px;
+        }
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e1e2f;
+            font-family: "Noto Sans SC", sans-serif;
+        }
+        .header .version {
+            font-size: 11px;
+            color: #8b95a9;
+            background: #f0f2f5;
+            padding: 2px 10px;
+            border-radius: 40px;
+            font-family: "Noto Sans SC", sans-serif;
+        }
+        .sub {
+            color: #6b7280;
+            font-size: 13px;
+            margin-bottom: 16px;
+            font-family: "Noto Sans SC", sans-serif;
+            padding-left: 4px;
+        }
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .left-col {
+            display: flex;
+            flex-direction: column;
+        }
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 14px;
+            background: #f8f9fc;
+            padding: 8px 16px;
+            border-radius: 14px;
+            margin-bottom: 12px;
+            font-family: "Noto Sans SC", sans-serif;
+        }
+        .toolbar label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .toolbar select,
+        .toolbar input[type="number"] {
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            background: white;
+            font-size: 12px;
+            width: 62px;
+            font-weight: 500;
+            font-family: "Noto Sans SC", sans-serif;
+        }
+        .toolbar select {
+            width: 78px;
+        }
+        .stat-badge {
+            background: #e6f0ff;
+            color: #1a4cba;
+            padding: 3px 14px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .stat-badge.purple {
+            background: #f0e6ff;
+            color: #6b21a5;
+        }
+        .stat-badge.orange {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .mode-switch {
+            display: flex;
+            gap: 4px;
+            background: #eef1f5;
+            border-radius: 40px;
+            padding: 3px;
+            margin-left: auto;
+        }
+        .mode-switch button {
+            border: none;
+            background: transparent;
+            padding: 5px 18px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: "Noto Sans SC", sans-serif;
+            color: #6b7280;
+            transition: 0.15s;
+        }
+        .mode-switch button.active {
+            background: white;
+            color: #1e1e2f;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
+        .canvas-wrapper {
+            background: #d5d9e0;
+            border-radius: 16px;
+            padding: 24px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 560px;
+            position: relative;
+            overflow: hidden;
+        }
+        .book {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0;
+            background: #d5d9e0;
+            padding: 8px 4px;
+            border-radius: 8px;
+            position: relative;
+        }
+        .page {
+            background: #fefcf5;
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.10);
+            position: relative;
+            border-radius: 2px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .page.left {
+            border-right: 2px solid #d0c8b8;
+            box-shadow: -2px 2px 16px rgba(0, 0, 0, 0.08), 4px 0 8px rgba(0, 0, 0, 0.04);
+        }
+        .page.right {
+            border-left: 2px solid #d0c8b8;
+            box-shadow: 2px 2px 16px rgba(0, 0, 0, 0.08), -4px 0 8px rgba(0, 0, 0, 0.04);
+        }
+        .spine {
+            width: 12px;
+            height: 100%;
+            background: linear-gradient(90deg, #c8bfae, #e8dfce, #c8bfae);
+            flex-shrink: 0;
+            border-radius: 2px;
+            box-shadow: inset -1px 0 4px rgba(0, 0, 0, 0.06), inset 1px 0 4px rgba(0, 0, 0, 0.06);
+            position: relative;
+            z-index: 2;
+            min-height: 200px;
+        }
+        .page .page-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .page .page-content .textbox-item {
+            position: absolute;
+            background: transparent;
+            border: 1px solid rgba(59, 124, 255, 0.08);
+            border-radius: 3px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .page .page-content .textbox-item:hover {
+            border-color: #3b7cff;
+        }
+        .mode-preview .page .page-content .textbox-item {
+            border: none !important;
+            background: transparent !important;
+        }
+        .mode-preview .page .page-content .textbox-item .text-display {
+            pointer-events: none !important;
+        }
+        .page .page-content .textbox-item .text-display {
+            width: 100%;
+            height: 100%;
+            padding: 4px 6px;
+            font-family: "Noto Serif SC", "宋体", serif;
+            color: #1e1e2f;
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow: hidden;
+            cursor: default;
+            outline: none;
+            background: transparent;
+            border: none;
+            resize: none;
+            user-select: text;
+            line-height: 1.75;
+        }
+        .page .page-label {
+            position: absolute;
+            bottom: 4px;
+            right: 8px;
+            font-size: 9px;
+            color: #999;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 0 6px;
+            border-radius: 6px;
+            font-weight: 500;
+            z-index: 3;
+            font-family: "Noto Sans SC", sans-serif;
+            pointer-events: none;
+        }
+        .page .page-label.left-label {
+            right: auto;
+            left: 8px;
+        }
+        .page .bleed-guide {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            right: 3px;
+            bottom: 3px;
+            border: 1px dashed rgba(255, 0, 0, 0.10);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .mode-preview .page .bleed-guide {
+            display: none;
+        }
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 12px 0 4px 0;
+            font-family: "Noto Sans SC", sans-serif;
+        }
+        .pagination button {
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 30px;
+            padding: 5px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: 0.15s;
+            font-family: "Noto Sans SC", sans-serif;
+        }
+        .pagination button:hover {
+            background: #3b7cff;
+            color: white;
+            border-color: #3b7cff;
+        }
+        .pagination button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: #f0f0f0;
+            color: #999;
+            border-color: #ddd;
+        }
+        .pagination .page-info {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            min-width: 80px;
+            text-align: center;
+        }
+        .pagination input {
+            width: 48px;
+            padding: 4px 4px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            font-size: 13px;
+            text-align: center;
+            font-weight: 600;
+            font-family: "Noto Sans SC", sans-serif;
+        }
+        .right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .panel {
+            background: #f8f9fc;
+            border-radius: 16px;
+            padding: 12px 16px;
+            font-family: "Noto Sans SC", sans-serif;
+        }
+        .panel h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            margin: 0 0 6px 0;
+            font-family: "Noto Sans SC", sans-serif;
+        }
+        .panel .row {
+            display: flex;
+            align-items: center;
+            gap: 4px 12px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+        .panel .row label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #2c3e50;
+            min-width: 24px;
+        }
+        .panel .row input[type="number"] {
+            width: 50px;
+            padding: 4px 6px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            font-size: 12px;
+            background: white;
+            font-weight: 500;
+            font-family: "Noto Sans SC", sans-serif;
+        }
+        .panel .row .unit {
+            font-size: 11px;
+            color: #8b95a9;
+        }
+        .margin-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 12px;
+        }
+        .margin-grid .row {
+            margin-bottom: 0;
+        }
+        .margin-grid .row label {
+            min-width: 20px;
+        }
+        .margin-grid .row input {
+            width: 46px;
+        }
+        .panel textarea {
+            width: 100%;
+            height: 120px;
+            border-radius: 10px;
+            border: 1px solid #d1d5db;
+            padding: 8px 10px;
+            font-size: 13px;
+            font-family: "Noto Serif SC", "宋体", serif;
+            resize: vertical;
+            background: white;
+            transition: 0.1s;
+            line-height: 1.6;
+        }
+        .panel textarea:focus {
+            outline: 2px solid #3b7cff;
+            outline-offset: 1px;
+            border-color: transparent;
+        }
+        .char-count {
+            font-size: 11px;
+            color: #6b7280;
+            text-align: right;
+            margin-top: 3px;
+            font-family: "Noto Sans SC", sans-serif;
+        }
+        .btn {
+            background: #3b7cff;
+            border: none;
+            color: white;
+            padding: 4px 16px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.15s;
+            font-family: "Noto Sans SC", sans-serif;
+        }
+        .btn:hover {
+            background: #2a5fd9;
+        }
+        .btn-gray {
+            background: #6b7280;
+        }
+        .btn-gray:hover {
+            background: #4b5563;
+        }
+        .footnote {
+            font-size: 10px;
+            color: #8b95a9;
+            margin-top: 6px;
+            text-align: right;
+            font-family: "Noto Sans SC", sans-serif;
+        }
+        .shortcut-hint {
+            font-size: 10px;
+            color: #8b95a9;
+            font-family: "Noto Sans SC", sans-serif;
+            padding: 4px 0;
+            text-align: center;
+        }
+        .empty-hint {
+            color: #bbb;
+            font-size: 13px;
+            text-align: center;
+            padding: 50px 10px;
+            font-style: italic;
+            font-family: "Noto Sans SC", sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+        }
+        .mode-preview .empty-hint {
+            display: none;
+        }
+        .total-info {
+            display: flex;
+            align-items: center;
+            gap: 6px 14px;
+            font-family: "Noto Sans SC", sans-serif;
+            margin-left: 4px;
+        }
+        .readonly-hint {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-family: "Noto Sans SC", sans-serif;
+            pointer-events: none;
+            z-index: 5;
+            white-space: nowrap;
+        }
+        .mode-preview .readonly-hint {
+            display: none;
+        }
+        .panel textarea::-webkit-scrollbar {
+            width: 4px;
+        }
+        .panel textarea::-webkit-scrollbar-thumb {
+            background: #c1c7d0;
+            border-radius: 4px;
+        }
+        .panel textarea::-webkit-scrollbar-track {
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app">
+
+        <div class="header">
+            <span class="icon">📖</span>
+            <h1>新技能之同人女简易排版估计工具</h1>
+            <span class="version">v1.0</span>
+        </div>
+        <div class="sub">默认 A5 · 上20 下22 内24 外20 · 文字填满自动续页 · 最大400页</div>
+
+        <div class="main-grid">
+
+            <div class="left-col">
+                <div class="toolbar">
+                    <label>📖 <select id="sizeSelect">
+                            <option value="A5" selected>A5 (148×210)</option>
+                            <option value="B6">B6 (125×176)</option>
+                            <option value="A6">A6 (105×148)</option>
+                        </select></label>
+                    <label>🔤 字号 <input type="number" id="fontSize" value="9" min="6" max="16" step="0.5" />pt</label>
+                    <label>📏 行距 <input type="number" id="lineHeight" value="18" min="10" max="30" step="0.5" />pt</label>
+
+                    <div class="total-info">
+                        <span class="stat-badge purple" id="bodyPagesBadge">📄 正文 0 P</span>
+                        <span class="stat-badge orange" id="totalPagesBadge">📑 总 0 P</span>
+                    </div>
+
+                    <div class="mode-switch">
+                        <button class="active" data-mode="layout" id="modeLayoutBtn">📐 排版</button>
+                        <button data-mode="preview" id="modePreviewBtn">📖 预览</button>
+                    </div>
+                </div>
+
+                <div class="canvas-wrapper">
+                    <div class="book" id="bookContainer">
+                        <div class="page left" id="pageLeft">
+                            <div class="page-content" id="pageContentLeft"></div>
+                            <div class="bleed-guide"></div>
+                            <div class="page-label left-label" id="pageLabelLeft">P.1</div>
+                        </div>
+                        <div class="spine"></div>
+                        <div class="page right" id="pageRight">
+                            <div class="page-content" id="pageContentRight"></div>
+                            <div class="bleed-guide"></div>
+                            <div class="page-label" id="pageLabelRight">P.2</div>
+                        </div>
+                    </div>
+                    <div class="readonly-hint">📝 请在右侧输入文字</div>
+                </div>
+
+                <div class="pagination">
+                    <button id="prevPageBtn">◀ 上一页</button>
+                    <span class="page-info">第 <input type="number" id="pageJumpInput" value="1" min="1" /> / <span id="totalPageDisplay">1</span> 页</span>
+                    <button id="nextPageBtn">下一页 ▶</button>
+                </div>
+                <div class="shortcut-hint">📝 在右侧文本框输入 · 自动分页 · 左右翻页 · 上限400页</div>
+            </div>
+
+            <div class="right-col">
+
+                <div class="panel">
+                    <h3>📐 页面边距 (mm)</h3>
+                    <div class="margin-grid">
+                        <div class="row"><label>上</label><input type="number" id="marginTop" value="20" min="0" max="50" step="0.5" /><span class="unit">mm</span></div>
+                        <div class="row"><label>下</label><input type="number" id="marginBottom" value="22" min="0" max="50" step="0.5" /><span class="unit">mm</span></div>
+                        <div class="row"><label>内</label><input type="number" id="marginLeft" value="24" min="0" max="50" step="0.5" /><span class="unit">mm</span></div>
+                        <div class="row"><label>外</label><input type="number" id="marginRight" value="20" min="0" max="50" step="0.5" /><span class="unit">mm</span></div>
+                    </div>
+                    <div style="margin-top:6px;display:flex;gap:4px;">
+                        <button class="btn" id="applyMarginBtn">⟳ 应用</button>
+                        <button class="btn btn-gray" id="resetMarginBtn">↺ 默认</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>📝 输入正文（自动分页 · 最大400页）</h3>
+                    <textarea id="textInput" placeholder="在这里输入或粘贴文字…&#10;文字会自动分页显示在书本上"></textarea>
+                    <div class="char-count">字数：<span id="charCountDisplay">0</span> 字</div>
+                </div>
+
+                <div class="panel">
+                    <h3>📄 封面 / 扉页 / 目录</h3>
+                    <div class="row">
+                        <label>P数</label>
+                        <input type="number" id="extraPages" value="4" min="0" max="20" step="1" />
+                        <span class="unit">页</span>
+                    </div>
+                </div>
+
+                <div class="footnote">* 文字严格限制在版心内 · 超出自动续页 · 左右翻页 · 字体：思源宋体 (免费商用)</div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  配置
+        // ============================================================
+        const PAPER_MM = {
+            A5: { w: 148, h: 210 },
+            B6: { w: 125, h: 176 },
+            A6: { w: 105, h: 148 },
+        };
+        const MM_TO_PX = 2.8;
+        const MAX_PAGES = 400;
+
+        const DEFAULT_MARGINS = { top: 20, bottom: 22, left: 24, right: 20 };
+        const DEFAULT_FONT_SIZE = 9;
+        const DEFAULT_LINE_HEIGHT = 18;
+
+        // ============================================================
+        //  DOM
+        // ============================================================
+        const sizeSelect = document.getElementById('sizeSelect');
+        const fontSizeInput = document.getElementById('fontSize');
+        const lineHeightInput = document.getElementById('lineHeight');
+
+        const pageLeft = document.getElementById('pageLeft');
+        const pageRight = document.getElementById('pageRight');
+        const contentLeft = document.getElementById('pageContentLeft');
+        const contentRight = document.getElementById('pageContentRight');
+        const pageLabelLeft = document.getElementById('pageLabelLeft');
+        const pageLabelRight = document.getElementById('pageLabelRight');
+
+        const bodyPagesBadge = document.getElementById('bodyPagesBadge');
+        const totalPagesBadge = document.getElementById('totalPagesBadge');
+        const totalPageDisplay = document.getElementById('totalPageDisplay');
+
+        const marginTopInput = document.getElementById('marginTop');
+        const marginBottomInput = document.getElementById('marginBottom');
+        const marginLeftInput = document.getElementById('marginLeft');
+        const marginRightInput = document.getElementById('marginRight');
+        const applyMarginBtn = document.getElementById('applyMarginBtn');
+        const resetMarginBtn = document.getElementById('resetMarginBtn');
+
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        const pageJumpInput = document.getElementById('pageJumpInput');
+
+        const textInput = document.getElementById('textInput');
+        const charCountDisplay = document.getElementById('charCountDisplay');
+
+        const extraPagesInput = document.getElementById('extraPages');
+
+        const modeLayoutBtn = document.getElementById('modeLayoutBtn');
+        const modePreviewBtn = document.getElementById('modePreviewBtn');
+
+        // ============================================================
+        //  状态
+        // ============================================================
+        let state = {
+            size: 'A5',
+            margins: { ...DEFAULT_MARGINS },
+            pageW: 0,
+            pageH: 0,
+            boxW: 0,
+            boxH: 0,
+            boxLeft: 0,
+            boxTop: 0,
+        };
+
+        let currentPage = 1;
+        let totalPages = 0;
+        let currentMode = 'layout';
+        let pageTexts = [];
+
+        // ============================================================
+        //  核心分页 - 使用段落感知 + 精确测量
+        // ============================================================
+        function getPageCapacity() {
+            const fontSize = parseFloat(fontSizeInput.value) || DEFAULT_FONT_SIZE;
+            const lineHeight = parseFloat(lineHeightInput.value) || DEFAULT_LINE_HEIGHT;
+
+            // 版心实际可用宽高
+            const paddingX = 10;
+            const paddingY = 8;
+            const boxW = state.boxW - paddingX * 2;
+            const boxH = state.boxH - paddingY * 2;
+
+            // 中文字符宽度 ≈ 字号 × 1.0
+            const charWidthPt = fontSize * 1.0;
+            const lineHeightPt = lineHeight;
+
+            // 单位转换：px → pt
+            const pxToPt = 0.75;
+            const boxWpt = boxW * pxToPt;
+            const boxHpt = boxH * pxToPt;
+
+            const charsPerRow = Math.floor(boxWpt / charWidthPt);
+            const rowsPerPage = Math.floor(boxHpt / lineHeightPt);
+
+            // 每页容量 = 每行字数 × 行数（留5%余量）
+            const capacity = Math.max(0, Math.floor(rowsPerPage * charsPerRow * 0.95));
+
+            return capacity;
+        }
+
+        function splitTextIntoPages(text) {
+            const charsPerPage = getPageCapacity();
+            if (charsPerPage <= 0 || !text) return [''];
+
+            // 按段落分割（保留段落结构）
+            const paragraphs = text.split(/\n/).filter(p => p.length > 0);
+            if (paragraphs.length === 0) return [''];
+
+            const pages = [];
+            let currentPageText = '';
+            let currentPageLength = 0;
+
+            for (let para of paragraphs) {
+                // 如果当前页为空，直接放段落
+                if (currentPageLength === 0) {
+                    currentPageText = para;
+                    currentPageLength = para.length;
+                    continue;
+                }
+
+                // 尝试加入当前段落（加换行）
+                const testText = currentPageText + '\n' + para;
+                const testLength = testText.length;
+
+                if (testLength <= charsPerPage) {
+                    // 能放下，合并
+                    currentPageText = testText;
+                    currentPageLength = testLength;
+                } else {
+                    // 放不下，先把当前页保存
+                    pages.push(currentPageText);
+                    currentPageText = para;
+                    currentPageLength = para.length;
+
+                    // 如果当前页数已达上限，强制停止
+                    if (pages.length >= MAX_PAGES) {
+                        break;
+                    }
+                }
+            }
+
+            // 处理剩余文字
+            if (currentPageText.length > 0 && pages.length < MAX_PAGES) {
+                pages.push(currentPageText);
+            }
+
+            // 如果还有剩余但达到上限，追加到最后一页
+            if (pages.length === MAX_PAGES && currentPageText.length > 0) {
+                pages[pages.length - 1] += '\n' + currentPageText;
+            }
+
+            if (pages.length === 0) pages.push('');
+            return pages;
+        }
+
+        function updatePages() {
+            const text = textInput.value;
+            pageTexts = splitTextIntoPages(text);
+            totalPages = pageTexts.length;
+
+            if (totalPages === 0) {
+                totalPages = 1;
+                pageTexts = [''];
+            }
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
+            }
+            if (currentPage < 1) {
+                currentPage = 1;
+            }
+
+            const extra = parseInt(extraPagesInput.value) || 0;
+            const totalWithExtra = totalPages + extra;
+
+            bodyPagesBadge.textContent = `📄 正文 ${Math.min(totalPages, MAX_PAGES)} P`;
+            totalPagesBadge.textContent = `📑 总 ${totalWithExtra} P`;
+            totalPageDisplay.textContent = Math.min(totalPages, MAX_PAGES) || 1;
+            charCountDisplay.textContent = text.length.toLocaleString();
+
+            renderCurrentSpread();
+            updatePagination();
+        }
+
+        // ============================================================
+        //  渲染当前跨页
+        // ============================================================
+        function renderCurrentSpread() {
+            const leftIdx = currentPage - 1;
+            const rightIdx = currentPage;
+
+            const globalFontSize = parseFloat(fontSizeInput.value) || DEFAULT_FONT_SIZE;
+            const globalLineHeight = parseFloat(lineHeightInput.value) || DEFAULT_LINE_HEIGHT;
+
+            const pageW = state.pageW;
+            const pageH = state.pageH;
+
+            [pageLeft, pageRight].forEach(el => {
+                el.style.width = pageW + 'px';
+                el.style.height = pageH + 'px';
+            });
+
+            renderSinglePage(contentLeft, leftIdx, globalFontSize, globalLineHeight);
+            renderSinglePage(contentRight, rightIdx, globalFontSize, globalLineHeight);
+
+            pageLabelLeft.textContent = `P.${leftIdx + 1}`;
+            pageLabelRight.textContent = `P.${rightIdx + 1}`;
+
+            updatePagination();
+            updateModeClass();
+        }
+
+        function renderSinglePage(container, pageIdx, fontSize, lineHeight) {
+            container.innerHTML = '';
+
+            if (pageIdx < 0 || pageIdx >= pageTexts.length || pageIdx >= MAX_PAGES) {
+                const emptyHint = document.createElement('div');
+                emptyHint.className = 'empty-hint';
+                emptyHint.textContent = pageIdx >= MAX_PAGES ? '📄 已达最大页数 400P' : '📄 请在右侧输入文字';
+                container.appendChild(emptyHint);
+                return;
+            }
+
+            const text = pageTexts[pageIdx] || '';
+
+            const box = document.createElement('div');
+            box.className = 'textbox-item';
+            box.style.left = state.boxLeft + 'px';
+            box.style.top = state.boxTop + 'px';
+            box.style.width = state.boxW + 'px';
+            box.style.height = state.boxH + 'px';
+
+            const display = document.createElement('div');
+            display.className = 'text-display';
+            display.textContent = text;
+            display.style.fontSize = fontSize + 'pt';
+            display.style.lineHeight = lineHeight + 'pt';
+            display.style.fontFamily = '"Noto Serif SC", "宋体", serif';
+            display.style.color = '#1e1e2f';
+            display.style.textAlign = 'left';
+            display.contentEditable = false;
+
+            box.appendChild(display);
+            container.appendChild(box);
+        }
+
+        // ============================================================
+        //  更新书本尺寸
+        // ============================================================
+        function updateBook() {
+            const size = sizeSelect.value;
+            const mm = PAPER_MM[size];
+            const pw = mm.w * MM_TO_PX;
+            const ph = mm.h * MM_TO_PX;
+
+            state.pageW = pw;
+            state.pageH = ph;
+
+            const m = state.margins;
+            const bw = pw - (m.left + m.right) * MM_TO_PX;
+            const bh = ph - (m.top + m.bottom) * MM_TO_PX;
+            const bl = m.left * MM_TO_PX;
+            const bt = m.top * MM_TO_PX;
+
+            state.boxW = Math.max(40, bw);
+            state.boxH = Math.max(30, bh);
+            state.boxLeft = bl;
+            state.boxTop = bt;
+
+            marginTopInput.value = m.top;
+            marginBottomInput.value = m.bottom;
+            marginLeftInput.value = m.left;
+            marginRightInput.value = m.right;
+
+            updatePages();
+        }
+
+        // ============================================================
+        //  模式切换
+        // ============================================================
+        function setMode(mode) {
+            currentMode = mode;
+            modeLayoutBtn.classList.toggle('active', mode === 'layout');
+            modePreviewBtn.classList.toggle('active', mode === 'preview');
+            updateModeClass();
+            renderCurrentSpread();
+        }
+
+        function updateModeClass() {
+            const wrapper = document.querySelector('.canvas-wrapper');
+            wrapper.classList.remove('mode-layout', 'mode-preview');
+            wrapper.classList.add(`mode-${currentMode}`);
+        }
+
+        modeLayoutBtn.addEventListener('click', () => setMode('layout'));
+        modePreviewBtn.addEventListener('click', () => setMode('preview'));
+
+        // ============================================================
+        //  翻页
+        // ============================================================
+        function updatePagination() {
+            const maxDisplay = Math.min(totalPages, MAX_PAGES);
+            prevPageBtn.disabled = currentPage <= 1;
+            nextPageBtn.disabled = currentPage >= maxDisplay;
+            pageJumpInput.max = maxDisplay || 1;
+            pageJumpInput.value = currentPage;
+        }
+
+        function goToPage(page) {
+            const maxDisplay = Math.min(totalPages, MAX_PAGES) || 1;
+            page = Math.max(1, Math.min(page, maxDisplay));
+            if (page !== currentPage) {
+                currentPage = page;
+                renderCurrentSpread();
+                updatePagination();
+            }
+        }
+
+        prevPageBtn.addEventListener('click', () => goToPage(currentPage - 1));
+        nextPageBtn.addEventListener('click', () => goToPage(currentPage + 1));
+        pageJumpInput.addEventListener('change', () => goToPage(parseInt(pageJumpInput.value) || 1));
+        pageJumpInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') goToPage(parseInt(pageJumpInput.value) || 1);
+        });
+
+        // ============================================================
+        //  事件绑定
+        // ============================================================
+        sizeSelect.addEventListener('change', updateBook);
+        fontSizeInput.addEventListener('input', updatePages);
+        lineHeightInput.addEventListener('input', updatePages);
+        textInput.addEventListener('input', updatePages);
+        extraPagesInput.addEventListener('input', updatePages);
+
+        function applyMargins() {
+            state.margins = {
+                top: parseFloat(marginTopInput.value) || 0,
+                bottom: parseFloat(marginBottomInput.value) || 0,
+                left: parseFloat(marginLeftInput.value) || 0,
+                right: parseFloat(marginRightInput.value) || 0,
+            };
+            updateBook();
+        }
+        applyMarginBtn.addEventListener('click', applyMargins);
+        resetMarginBtn.addEventListener('click', () => {
+            state.margins = { ...DEFAULT_MARGINS };
+            marginTopInput.value = DEFAULT_MARGINS.top;
+            marginBottomInput.value = DEFAULT_MARGINS.bottom;
+            marginLeftInput.value = DEFAULT_MARGINS.left;
+            marginRightInput.value = DEFAULT_MARGINS.right;
+            updateBook();
+        });
+
+        // ============================================================
+        //  启动
+        // ============================================================
+        textInput.value = '';
+
+        setMode('layout');
+        updateBook();
+        updatePages();
+        updatePagination();
+    </script>
+
+</body>
+</html>
