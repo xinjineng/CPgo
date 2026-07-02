@@ -488,21 +488,27 @@
         .panel textarea::-webkit-scrollbar-track {
             background: transparent;
         }
+        /* 底部版权信息样式 */
+        .copyright-info {
+            margin-top: 20px;
+            text-align: center;
+            font-family: "Noto Sans SC", sans-serif;
+            font-size: 12px;
+            color: #6b7280;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
+        }
     </style>
 </head>
 <body>
-
     <div class="app">
-
         <div class="header">
             <span class="icon">📖</span>
             <h1>新技能之同人女简易排版估计工具</h1>
             <span class="version">v1.0</span>
         </div>
         <div class="sub">默认 A5 · 上20 下22 内24 外20 · 文字填满自动续页 · 最大400页</div>
-
         <div class="main-grid">
-
             <div class="left-col">
                 <div class="toolbar">
                     <label>📖 <select id="sizeSelect">
@@ -512,18 +518,15 @@
                         </select></label>
                     <label>🔤 字号 <input type="number" id="fontSize" value="9" min="6" max="16" step="0.5" />pt</label>
                     <label>📏 行距 <input type="number" id="lineHeight" value="18" min="10" max="30" step="0.5" />pt</label>
-
                     <div class="total-info">
                         <span class="stat-badge purple" id="bodyPagesBadge">📄 正文 0 P</span>
                         <span class="stat-badge orange" id="totalPagesBadge">📑 总 0 P</span>
                     </div>
-
                     <div class="mode-switch">
                         <button class="active" data-mode="layout" id="modeLayoutBtn">📐 排版</button>
                         <button data-mode="preview" id="modePreviewBtn">📖 预览</button>
                     </div>
                 </div>
-
                 <div class="canvas-wrapper">
                     <div class="book" id="bookContainer">
                         <div class="page left" id="pageLeft">
@@ -540,7 +543,6 @@
                     </div>
                     <div class="readonly-hint">📝 请在右侧输入文字</div>
                 </div>
-
                 <div class="pagination">
                     <button id="prevPageBtn">◀ 上一页</button>
                     <span class="page-info">第 <input type="number" id="pageJumpInput" value="1" min="1" /> / <span id="totalPageDisplay">1</span> 页</span>
@@ -548,9 +550,7 @@
                 </div>
                 <div class="shortcut-hint">📝 在右侧文本框输入 · 自动分页 · 左右翻页 · 上限400页</div>
             </div>
-
             <div class="right-col">
-
                 <div class="panel">
                     <h3>📐 页面边距 (mm)</h3>
                     <div class="margin-grid">
@@ -564,13 +564,11 @@
                         <button class="btn btn-gray" id="resetMarginBtn">↺ 默认</button>
                     </div>
                 </div>
-
                 <div class="panel">
                     <h3>📝 输入正文（自动分页 · 最大400页）</h3>
                     <textarea id="textInput" placeholder="在这里输入或粘贴文字…&#10;文字会自动分页显示在书本上"></textarea>
                     <div class="char-count">字数：<span id="charCountDisplay">0</span> 字</div>
                 </div>
-
                 <div class="panel">
                     <h3>📄 封面 / 扉页 / 目录</h3>
                     <div class="row">
@@ -579,13 +577,14 @@
                         <span class="unit">页</span>
                     </div>
                 </div>
-
                 <div class="footnote">* 文字严格限制在版心内 · 超出自动续页 · 左右翻页 · 字体：思源宋体 (免费商用)</div>
-
             </div>
         </div>
+        <!-- 新增底部创作人&联系方式区域 -->
+        <div class="copyright-info">
+            创作人：新技能 | 联系方式：2539008742@qq.com
+        </div>
     </div>
-
     <script>
         // ============================================================
         //  配置
@@ -597,48 +596,38 @@
         };
         const MM_TO_PX = 2.8;
         const MAX_PAGES = 400;
-
         const DEFAULT_MARGINS = { top: 20, bottom: 22, left: 24, right: 20 };
         const DEFAULT_FONT_SIZE = 9;
         const DEFAULT_LINE_HEIGHT = 18;
-
         // ============================================================
         //  DOM
         // ============================================================
         const sizeSelect = document.getElementById('sizeSelect');
         const fontSizeInput = document.getElementById('fontSize');
         const lineHeightInput = document.getElementById('lineHeight');
-
         const pageLeft = document.getElementById('pageLeft');
         const pageRight = document.getElementById('pageRight');
         const contentLeft = document.getElementById('pageContentLeft');
         const contentRight = document.getElementById('pageContentRight');
         const pageLabelLeft = document.getElementById('pageLabelLeft');
         const pageLabelRight = document.getElementById('pageLabelRight');
-
         const bodyPagesBadge = document.getElementById('bodyPagesBadge');
         const totalPagesBadge = document.getElementById('totalPagesBadge');
         const totalPageDisplay = document.getElementById('totalPageDisplay');
-
         const marginTopInput = document.getElementById('marginTop');
         const marginBottomInput = document.getElementById('marginBottom');
         const marginLeftInput = document.getElementById('marginLeft');
         const marginRightInput = document.getElementById('marginRight');
         const applyMarginBtn = document.getElementById('applyMarginBtn');
         const resetMarginBtn = document.getElementById('resetMarginBtn');
-
         const prevPageBtn = document.getElementById('prevPageBtn');
         const nextPageBtn = document.getElementById('nextPageBtn');
         const pageJumpInput = document.getElementById('pageJumpInput');
-
         const textInput = document.getElementById('textInput');
         const charCountDisplay = document.getElementById('charCountDisplay');
-
         const extraPagesInput = document.getElementById('extraPages');
-
         const modeLayoutBtn = document.getElementById('modeLayoutBtn');
         const modePreviewBtn = document.getElementById('modePreviewBtn');
-
         // ============================================================
         //  状态
         // ============================================================
@@ -652,55 +641,43 @@
             boxLeft: 0,
             boxTop: 0,
         };
-
         let currentPage = 1;
         let totalPages = 0;
         let currentMode = 'layout';
         let pageTexts = [];
-
         // ============================================================
         //  核心分页 - 使用段落感知 + 精确测量
         // ============================================================
         function getPageCapacity() {
             const fontSize = parseFloat(fontSizeInput.value) || DEFAULT_FONT_SIZE;
             const lineHeight = parseFloat(lineHeightInput.value) || DEFAULT_LINE_HEIGHT;
-
             // 版心实际可用宽高
             const paddingX = 10;
             const paddingY = 8;
             const boxW = state.boxW - paddingX * 2;
             const boxH = state.boxH - paddingY * 2;
-
             // 中文字符宽度 ≈ 字号 × 1.0
             const charWidthPt = fontSize * 1.0;
             const lineHeightPt = lineHeight;
-
             // 单位转换：px → pt
             const pxToPt = 0.75;
             const boxWpt = boxW * pxToPt;
             const boxHpt = boxH * pxToPt;
-
             const charsPerRow = Math.floor(boxWpt / charWidthPt);
             const rowsPerPage = Math.floor(boxHpt / lineHeightPt);
-
             // 每页容量 = 每行字数 × 行数（留5%余量）
             const capacity = Math.max(0, Math.floor(rowsPerPage * charsPerRow * 0.95));
-
             return capacity;
         }
-
         function splitTextIntoPages(text) {
             const charsPerPage = getPageCapacity();
             if (charsPerPage <= 0 || !text) return [''];
-
             // 按段落分割（保留段落结构）
             const paragraphs = text.split(/\n/).filter(p => p.length > 0);
             if (paragraphs.length === 0) return [''];
-
             const pages = [];
             let currentPageText = '';
             let currentPageLength = 0;
-
             for (let para of paragraphs) {
                 // 如果当前页为空，直接放段落
                 if (currentPageLength === 0) {
@@ -708,11 +685,9 @@
                     currentPageLength = para.length;
                     continue;
                 }
-
                 // 尝试加入当前段落（加换行）
                 const testText = currentPageText + '\n' + para;
                 const testLength = testText.length;
-
                 if (testLength <= charsPerPage) {
                     // 能放下，合并
                     currentPageText = testText;
@@ -722,33 +697,27 @@
                     pages.push(currentPageText);
                     currentPageText = para;
                     currentPageLength = para.length;
-
                     // 如果当前页数已达上限，强制停止
                     if (pages.length >= MAX_PAGES) {
                         break;
                     }
                 }
             }
-
             // 处理剩余文字
             if (currentPageText.length > 0 && pages.length < MAX_PAGES) {
                 pages.push(currentPageText);
             }
-
             // 如果还有剩余但达到上限，追加到最后一页
             if (pages.length === MAX_PAGES && currentPageText.length > 0) {
                 pages[pages.length - 1] += '\n' + currentPageText;
             }
-
             if (pages.length === 0) pages.push('');
             return pages;
         }
-
         function updatePages() {
             const text = textInput.value;
             pageTexts = splitTextIntoPages(text);
             totalPages = pageTexts.length;
-
             if (totalPages === 0) {
                 totalPages = 1;
                 pageTexts = [''];
@@ -759,50 +728,38 @@
             if (currentPage < 1) {
                 currentPage = 1;
             }
-
             const extra = parseInt(extraPagesInput.value) || 0;
             const totalWithExtra = totalPages + extra;
-
             bodyPagesBadge.textContent = `📄 正文 ${Math.min(totalPages, MAX_PAGES)} P`;
             totalPagesBadge.textContent = `📑 总 ${totalWithExtra} P`;
             totalPageDisplay.textContent = Math.min(totalPages, MAX_PAGES) || 1;
             charCountDisplay.textContent = text.length.toLocaleString();
-
             renderCurrentSpread();
             updatePagination();
         }
-
         // ============================================================
         //  渲染当前跨页
         // ============================================================
         function renderCurrentSpread() {
             const leftIdx = currentPage - 1;
             const rightIdx = currentPage;
-
             const globalFontSize = parseFloat(fontSizeInput.value) || DEFAULT_FONT_SIZE;
             const globalLineHeight = parseFloat(lineHeightInput.value) || DEFAULT_LINE_HEIGHT;
-
             const pageW = state.pageW;
             const pageH = state.pageH;
-
             [pageLeft, pageRight].forEach(el => {
                 el.style.width = pageW + 'px';
                 el.style.height = pageH + 'px';
             });
-
             renderSinglePage(contentLeft, leftIdx, globalFontSize, globalLineHeight);
             renderSinglePage(contentRight, rightIdx, globalFontSize, globalLineHeight);
-
             pageLabelLeft.textContent = `P.${leftIdx + 1}`;
             pageLabelRight.textContent = `P.${rightIdx + 1}`;
-
             updatePagination();
             updateModeClass();
         }
-
         function renderSinglePage(container, pageIdx, fontSize, lineHeight) {
             container.innerHTML = '';
-
             if (pageIdx < 0 || pageIdx >= pageTexts.length || pageIdx >= MAX_PAGES) {
                 const emptyHint = document.createElement('div');
                 emptyHint.className = 'empty-hint';
@@ -810,16 +767,13 @@
                 container.appendChild(emptyHint);
                 return;
             }
-
             const text = pageTexts[pageIdx] || '';
-
             const box = document.createElement('div');
             box.className = 'textbox-item';
             box.style.left = state.boxLeft + 'px';
             box.style.top = state.boxTop + 'px';
             box.style.width = state.boxW + 'px';
             box.style.height = state.boxH + 'px';
-
             const display = document.createElement('div');
             display.className = 'text-display';
             display.textContent = text;
@@ -829,11 +783,9 @@
             display.style.color = '#1e1e2f';
             display.style.textAlign = 'left';
             display.contentEditable = false;
-
             box.appendChild(display);
             container.appendChild(box);
         }
-
         // ============================================================
         //  更新书本尺寸
         // ============================================================
@@ -842,29 +794,23 @@
             const mm = PAPER_MM[size];
             const pw = mm.w * MM_TO_PX;
             const ph = mm.h * MM_TO_PX;
-
             state.pageW = pw;
             state.pageH = ph;
-
             const m = state.margins;
             const bw = pw - (m.left + m.right) * MM_TO_PX;
             const bh = ph - (m.top + m.bottom) * MM_TO_PX;
             const bl = m.left * MM_TO_PX;
             const bt = m.top * MM_TO_PX;
-
             state.boxW = Math.max(40, bw);
             state.boxH = Math.max(30, bh);
             state.boxLeft = bl;
             state.boxTop = bt;
-
             marginTopInput.value = m.top;
             marginBottomInput.value = m.bottom;
             marginLeftInput.value = m.left;
             marginRightInput.value = m.right;
-
             updatePages();
         }
-
         // ============================================================
         //  模式切换
         // ============================================================
@@ -875,16 +821,13 @@
             updateModeClass();
             renderCurrentSpread();
         }
-
         function updateModeClass() {
             const wrapper = document.querySelector('.canvas-wrapper');
             wrapper.classList.remove('mode-layout', 'mode-preview');
             wrapper.classList.add(`mode-${currentMode}`);
         }
-
         modeLayoutBtn.addEventListener('click', () => setMode('layout'));
         modePreviewBtn.addEventListener('click', () => setMode('preview'));
-
         // ============================================================
         //  翻页
         // ============================================================
@@ -895,7 +838,6 @@
             pageJumpInput.max = maxDisplay || 1;
             pageJumpInput.value = currentPage;
         }
-
         function goToPage(page) {
             const maxDisplay = Math.min(totalPages, MAX_PAGES) || 1;
             page = Math.max(1, Math.min(page, maxDisplay));
@@ -905,14 +847,12 @@
                 updatePagination();
             }
         }
-
         prevPageBtn.addEventListener('click', () => goToPage(currentPage - 1));
         nextPageBtn.addEventListener('click', () => goToPage(currentPage + 1));
         pageJumpInput.addEventListener('change', () => goToPage(parseInt(pageJumpInput.value) || 1));
         pageJumpInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') goToPage(parseInt(pageJumpInput.value) || 1);
         });
-
         // ============================================================
         //  事件绑定
         // ============================================================
@@ -921,7 +861,6 @@
         lineHeightInput.addEventListener('input', updatePages);
         textInput.addEventListener('input', updatePages);
         extraPagesInput.addEventListener('input', updatePages);
-
         function applyMargins() {
             state.margins = {
                 top: parseFloat(marginTopInput.value) || 0,
@@ -940,17 +879,14 @@
             marginRightInput.value = DEFAULT_MARGINS.right;
             updateBook();
         });
-
         // ============================================================
         //  启动
         // ============================================================
         textInput.value = '';
-
         setMode('layout');
         updateBook();
         updatePages();
         updatePagination();
     </script>
-
 </body>
 </html>
